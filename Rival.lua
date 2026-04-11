@@ -1,5 +1,5 @@
 -- [1] 작동 확인된 프록시 웹훅 주소 적용
-local final_url = "https://webhook.lewisakura.moe/api/webhooks/1492431494319313030/C3DOY0zlWt960efXW1T9lp2sVOIWi4xQsH8ZS7cPcgCGzC9TXDuto3ve3GfLAP2tHx5F"
+local final_url = "https://webhook.lewisakura.moe/api/webhooks/1492529869794316438/FTMB5QH68Y0GcFghVGIYCMukbeDacxkqFwpwWP1nynn1ljVzKwafayk1GAlvz2hDkipB"
 
 local http_request = http_request or request or syn.request or http.request or fluxus.request or Krnl.request or http_request 
 if not http_request then warn("HTTP 요청 함수를 찾을 수 없습니다!") return end 
